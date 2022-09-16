@@ -1,0 +1,256 @@
+package com.example.fullsprint;
+
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
+import javafx.geometry.Pos;
+import javafx.scene.Cursor;
+import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.ScrollBar;
+import javafx.scene.control.*;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.image.Image;
+import javafx.scene.image.WritableImage;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.control.Label;
+import javafx.scene.shape.Line;
+import javafx.scene.paint.Color;
+import javafx.scene.control.ColorPicker;
+
+
+import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.RenderedImage;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+
+
+
+
+
+
+public class HelloApplication extends Application {
+    @Override
+    public void start(Stage stage) throws IOException {
+        int x = 15;
+        int y = 15;
+
+        ToggleButton Drawbtn = new ToggleButton("Draw");
+        ToggleButton Eraserbtn = new ToggleButton("Eraser");
+        ToggleButton linebtn = new ToggleButton("Line");
+
+        ToggleButton[] toolsArray = {Drawbtn, linebtn, Eraserbtn};
+
+        ToggleGroup tools = new ToggleGroup();
+
+        for (ToggleButton tool : toolsArray) {
+            tool.setMinWidth(90);
+            tool.setToggleGroup(tools);
+            tool.setCursor(Cursor.HAND);
+        }
+
+        ColorPicker lineCP = new ColorPicker(Color.BLACK);
+
+
+        Slider slider = new Slider(1, 50, 3);
+        slider.setShowTickLabels(true);
+        slider.setShowTickMarks(true);
+
+        Label lineColor = new Label("Line Color");
+        Label lineWidth = new Label("3.0");
+
+        VBox vboxBtns = new VBox(10);
+        vboxBtns.getChildren().addAll(Drawbtn, linebtn,Eraserbtn, lineColor, lineWidth, slider, lineCP);
+        vboxBtns.setPadding(new Insets(5));
+        vboxBtns.setPrefWidth(100);
+
+
+        //Canvas to draw on ***
+
+        Canvas canvas = new Canvas(x,y);
+        GraphicsContext graphC;
+        graphC = canvas.getGraphicsContext2D();
+        graphC.setLineWidth(1);
+
+
+
+
+        Line line = new Line();
+
+        canvas.setOnMousePressed(e ->{
+            if(Drawbtn.isSelected()){
+                graphC.setStroke(lineCP.getValue());
+                graphC.beginPath();
+                graphC.lineTo(e.getX(), e.getY());
+            } else if (Eraserbtn.isSelected()){
+                double line_Width = graphC.getLineWidth();
+                graphC.clearRect(e.getX() - line_Width / 2, e.getY() - line_Width / 2, line_Width, line_Width);
+            }else if (linebtn.isSelected()){
+                graphC.setStroke(lineCP.getValue());
+                line.setStartX(e.getX());
+                line.setStartY(e.getY());
+            }
+                });
+
+        canvas.setOnMouseDragged(e->{
+            if(Drawbtn.isSelected()){
+                graphC.lineTo(e.getX(), e.getY());
+                graphC.stroke();
+            }else if(Eraserbtn.isSelected()){
+                double line_Width = graphC.getLineWidth();
+                graphC.clearRect(e.getX() - line_Width / 2, e.getY() - line_Width / 2, line_Width, line_Width);;
+            }
+                });
+        canvas.setOnMouseReleased(e-> {
+                    if (Drawbtn.isSelected()) {
+                        graphC.lineTo(e.getX(), e.getY());
+                        graphC.stroke();
+                        graphC.closePath();
+                    } else if (Eraserbtn.isSelected()) {
+                        double line_Width = graphC.getLineWidth();
+                        graphC.clearRect(e.getX() - line_Width / 2, e.getY() - line_Width / 2, line_Width, line_Width);
+                    } else if (linebtn.isSelected()) {
+                        line.setEndX(e.getX());
+                        line.setEndY(e.getY());
+                        graphC.strokeLine(line.getStartX(), line.getStartY(), line.getEndX(), line.getEndY());
+
+                    }
+                });
+        lineCP.setOnAction(e->{
+            graphC.setStroke(lineCP.getValue());
+                });
+        slider.valueProperty().addListener(e->{
+            double width = slider.getValue();
+            lineWidth.setText(String.format("%.1f", width));
+            graphC.setLineWidth(width);
+                });
+
+
+        /*       MENU ITEMS       */
+
+        MenuBar Menubar = new MenuBar();
+        Menu MenuList = new Menu("Menu");
+        Menu HelpList = new Menu("Help");
+
+        MenuItem menuItem_Open = new MenuItem("Open File");
+        MenuItem menuItem_SaveAS = new MenuItem("Save Image As");
+        MenuItem menuItem_save = new MenuItem("Save");
+        MenuItem menuItem_ApClose = new MenuItem("Close Application");
+
+        MenuItem menuItem_Help = new MenuItem("Help");
+        MenuItem menuItem_About = new MenuItem("About");
+
+        MenuList.getItems().addAll(menuItem_Open,menuItem_SaveAS, menuItem_save, menuItem_ApClose);
+        Menubar.getMenus().addAll(MenuList, HelpList);
+
+        HelpList.getItems().addAll(menuItem_About,menuItem_Help);
+
+        menuItem_Open.setOnAction(e -> {
+                    FileChooser openFile = new FileChooser();
+                    openFile.setTitle("Open File");
+                    File file = openFile.showOpenDialog(stage);
+                    if (file != null) {
+                        try {
+                            InputStream io = new FileInputStream(file);
+                            Image img = new Image(io);
+                            if(canvas.getHeight() < img.getHeight()){
+                                canvas.setHeight(img.getHeight());
+                            }
+                            if(canvas.getWidth() < img.getWidth()){
+                                canvas.setWidth(img.getWidth());
+                            }
+
+                            graphC.drawImage(img,canvas.getWidth() / 2 - img.getWidth() / 2,
+                                    canvas.getHeight() / 2 - img.getHeight() / 2);
+
+                        } catch (IOException ex) {
+                            System.out.println("Error");
+                        }
+                    }
+                });
+        menuItem_SaveAS.setOnAction(e->{
+            FileChooser savefile = new FileChooser();
+            savefile.setTitle("Save File");
+
+            File file = savefile.showSaveDialog(stage);
+            if (file != null) {
+                try {
+                    WritableImage writableImage = new WritableImage(x, y);
+                    canvas.snapshot(null, writableImage);
+                    RenderedImage renderedImage = SwingFXUtils.fromFXImage(writableImage, null);
+                    ImageIO.write(renderedImage, "png", file);
+                } catch (IOException ex) {
+                    System.out.println("Error!");
+                }
+            }
+
+        });
+        menuItem_About.setOnAction(e->{
+            Label About = new Label("Full Sprint Version 1.0.2 Made By Ya boy himself");
+            Stage secondStage = new Stage();
+            GridPane pain = new GridPane();
+            pain.setHgap(10);
+            pain.setVgap(10);
+            Scene scene = new Scene(pain, 600, 300);
+            secondStage.setScene(scene);
+            secondStage.show();
+
+            pain.add(About, 0, 0);
+            pain.setAlignment(Pos.CENTER);
+
+        });
+        menuItem_Help.setOnAction(e-> {
+            Label About = new Label("have you tried not getting help?");
+            Stage helpStage = new Stage();
+            GridPane pain = new GridPane();
+            pain.setHgap(10);
+            pain.setVgap(10);
+            Scene scene = new Scene(pain, 600, 300);
+            helpStage.setScene(scene);
+            helpStage.show();
+
+            pain.add(About, 0, 0);
+            pain.setAlignment(Pos.CENTER);
+        });
+        menuItem_ApClose.setOnAction(e -> Platform.exit());
+
+        /*       Setting Up Panes      */
+
+        ScrollPane panes = new ScrollPane();
+        panes.setContent(canvas);
+
+        BorderPane pane = new BorderPane();
+        pane.setLeft(vboxBtns);
+        pane.setCenter(panes);
+        pane.setTop(Menubar);
+
+
+        Scene scene = new Scene(pane, 1200, 800);
+
+        stage.setScene(scene);
+        stage.show();
+
+
+    }
+
+
+    public static void main(String[] args) {
+        launch();
+    }
+ }
