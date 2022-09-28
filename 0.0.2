@@ -3,8 +3,8 @@ package com.example.fullsprint;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
-import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
@@ -13,16 +13,24 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.ScrollBar;
+import javafx.scene.control.Button;
+import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.scene.control.*;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
+import javafx.scene.image.PixelReader;
 import javafx.scene.image.WritableImage;
+import javafx.scene.input.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.StackPane;
 import javafx.scene.control.Label;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Shape;
+import javafx.scene.control.TextField;
 import javafx.scene.paint.Color;
 import javafx.scene.control.ColorPicker;
 
@@ -40,32 +48,38 @@ import java.io.IOException;
 import java.io.InputStream;
 
 
-
-
-
-
-
 public class HelloApplication extends Application {
-    @Override
+    int counter = 0;
+    int systemCheck = 0;
+    int lineDash = 0;
+
     public void start(Stage stage) throws IOException {
-        int x = 15;
-        int y = 15;
+        int x = 1500;
+        int y = 1500;
 
         ToggleButton Drawbtn = new ToggleButton("Draw");
         ToggleButton Eraserbtn = new ToggleButton("Eraser");
         ToggleButton linebtn = new ToggleButton("Line");
+        ToggleButton EyeDropper = new ToggleButton("EyeDropper");
+        ToggleButton rectBtn = new ToggleButton("Rectangle");
+        ToggleButton circlebtn = new ToggleButton("Circle");
+        ToggleButton ellipsebtn = new ToggleButton("Ellipse");
+        ToggleButton squarebtn = new ToggleButton("Square");
 
-        ToggleButton[] toolsArray = {Drawbtn, linebtn, Eraserbtn};
-
+        ToggleButton[] toolsArray = {Drawbtn, linebtn, Eraserbtn, EyeDropper, rectBtn, squarebtn, circlebtn, ellipsebtn};
         ToggleGroup tools = new ToggleGroup();
-
         for (ToggleButton tool : toolsArray) {
-            tool.setMinWidth(90);
+            tool.setMinWidth(50);
             tool.setToggleGroup(tools);
             tool.setCursor(Cursor.HAND);
         }
 
         ColorPicker lineCP = new ColorPicker(Color.BLACK);
+
+        TextField CanvasX = new TextField();
+        TextField CanvasY = new TextField();
+
+        Button changeCan = new Button("Change Canvas");
 
 
         Slider slider = new Slider(1, 50, 3);
@@ -74,135 +88,75 @@ public class HelloApplication extends Application {
 
         Label lineColor = new Label("Line Color");
         Label lineWidth = new Label("3.0");
+        Label canvX = new Label("Canvas X");
+        Label canvY = new Label("Canvas y");
 
         VBox vboxBtns = new VBox(10);
-        vboxBtns.getChildren().addAll(Drawbtn, linebtn,Eraserbtn, lineColor, lineWidth, slider, lineCP);
+        vboxBtns.getChildren().addAll(Drawbtn, linebtn, Eraserbtn, lineColor, lineWidth, slider, lineCP, EyeDropper
+                , rectBtn, squarebtn, circlebtn, ellipsebtn, canvX, CanvasX, canvY, CanvasY, changeCan);
         vboxBtns.setPadding(new Insets(5));
         vboxBtns.setPrefWidth(100);
 
+        linebtn.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                Button Dashed = new Button("Dashed");
+                Button Line = new Button("Line");
+                Stage stage = new Stage();
+                GridPane warn = new GridPane();
+                warn.setHgap(10);
+                warn.setVgap(10);
 
-        //Canvas to draw on ***
+                Scene scene = new Scene(warn, 500, 300);
+                stage.setScene(scene);
+                stage.show();
 
-        Canvas canvas = new Canvas(x,y);
-        GraphicsContext graphC;
-        graphC = canvas.getGraphicsContext2D();
-        graphC.setLineWidth(1);
+                warn.add(Dashed, 0, 1);
+                warn.add(Line, 2, 1);
+                warn.setAlignment(Pos.CENTER);
 
-
-
-
-        Line line = new Line();
-
-        canvas.setOnMousePressed(e ->{
-            if(Drawbtn.isSelected()){
-                graphC.setStroke(lineCP.getValue());
-                graphC.beginPath();
-                graphC.lineTo(e.getX(), e.getY());
-            } else if (Eraserbtn.isSelected()){
-                double line_Width = graphC.getLineWidth();
-                graphC.clearRect(e.getX() - line_Width / 2, e.getY() - line_Width / 2, line_Width, line_Width);
-            }else if (linebtn.isSelected()){
-                graphC.setStroke(lineCP.getValue());
-                line.setStartX(e.getX());
-                line.setStartY(e.getY());
-            }
+                Dashed.setOnAction(new EventHandler<ActionEvent>() {
+                    @Override
+                    public void handle(ActionEvent actionEvent) {
+                        lineDash = 1;
+                        stage.close();
+                    }
                 });
-
-        canvas.setOnMouseDragged(e->{
-            if(Drawbtn.isSelected()){
-                graphC.lineTo(e.getX(), e.getY());
-                graphC.stroke();
-            }else if(Eraserbtn.isSelected()){
-                double line_Width = graphC.getLineWidth();
-                graphC.clearRect(e.getX() - line_Width / 2, e.getY() - line_Width / 2, line_Width, line_Width);;
-            }
-                });
-        canvas.setOnMouseReleased(e-> {
-                    if (Drawbtn.isSelected()) {
-                        graphC.lineTo(e.getX(), e.getY());
-                        graphC.stroke();
-                        graphC.closePath();
-                    } else if (Eraserbtn.isSelected()) {
-                        double line_Width = graphC.getLineWidth();
-                        graphC.clearRect(e.getX() - line_Width / 2, e.getY() - line_Width / 2, line_Width, line_Width);
-                    } else if (linebtn.isSelected()) {
-                        line.setEndX(e.getX());
-                        line.setEndY(e.getY());
-                        graphC.strokeLine(line.getStartX(), line.getStartY(), line.getEndX(), line.getEndY());
+                Line.setOnAction(new EventHandler<ActionEvent>() {
+                    @Override
+                    public void handle(ActionEvent actionEvent) {
+                        lineDash = 0;
+                        stage.close();
 
                     }
                 });
-        lineCP.setOnAction(e->{
-            graphC.setStroke(lineCP.getValue());
-                });
-        slider.valueProperty().addListener(e->{
-            double width = slider.getValue();
-            lineWidth.setText(String.format("%.1f", width));
-            graphC.setLineWidth(width);
-                });
 
+            }
+        });
+
+        Line line = new Line();
+        Rectangle rect = new Rectangle();
+        Circle circ = new Circle();
+        Ellipse elps = new Ellipse();
 
         /*       MENU ITEMS       */
-
         MenuBar Menubar = new MenuBar();
         Menu MenuList = new Menu("Menu");
         Menu HelpList = new Menu("Help");
 
         MenuItem menuItem_Open = new MenuItem("Open File");
-        MenuItem menuItem_SaveAS = new MenuItem("Save Image As");
+        MenuItem menuItem_SaveAS = new MenuItem("_Save Image As");
         MenuItem menuItem_save = new MenuItem("Save");
         MenuItem menuItem_ApClose = new MenuItem("Close Application");
-
         MenuItem menuItem_Help = new MenuItem("Help");
         MenuItem menuItem_About = new MenuItem("About");
 
-        MenuList.getItems().addAll(menuItem_Open,menuItem_SaveAS, menuItem_save, menuItem_ApClose);
+        MenuList.getItems().addAll(menuItem_Open, menuItem_SaveAS, menuItem_save, menuItem_ApClose);
         Menubar.getMenus().addAll(MenuList, HelpList);
 
-        HelpList.getItems().addAll(menuItem_About,menuItem_Help);
-
-        menuItem_Open.setOnAction(e -> {
-                    FileChooser openFile = new FileChooser();
-                    openFile.setTitle("Open File");
-                    File file = openFile.showOpenDialog(stage);
-                    if (file != null) {
-                        try {
-                            InputStream io = new FileInputStream(file);
-                            Image img = new Image(io);
-                            if(canvas.getHeight() < img.getHeight()){
-                                canvas.setHeight(img.getHeight());
-                            }
-                            if(canvas.getWidth() < img.getWidth()){
-                                canvas.setWidth(img.getWidth());
-                            }
-
-                            graphC.drawImage(img,canvas.getWidth() / 2 - img.getWidth() / 2,
-                                    canvas.getHeight() / 2 - img.getHeight() / 2);
-
-                        } catch (IOException ex) {
-                            System.out.println("Error");
-                        }
-                    }
-                });
-        menuItem_SaveAS.setOnAction(e->{
-            FileChooser savefile = new FileChooser();
-            savefile.setTitle("Save File");
-
-            File file = savefile.showSaveDialog(stage);
-            if (file != null) {
-                try {
-                    WritableImage writableImage = new WritableImage(x, y);
-                    canvas.snapshot(null, writableImage);
-                    RenderedImage renderedImage = SwingFXUtils.fromFXImage(writableImage, null);
-                    ImageIO.write(renderedImage, "png", file);
-                } catch (IOException ex) {
-                    System.out.println("Error!");
-                }
-            }
-
-        });
-        menuItem_About.setOnAction(e->{
-            Label About = new Label("Full Sprint Version 1.0.2 Made By Ya boy himself");
+        HelpList.getItems().addAll(menuItem_About, menuItem_Help);
+        menuItem_About.setOnAction(e -> {
+            Label About = new Label("Full Sprint Version 0.0.2 Made By Ya boy himself");
             Stage secondStage = new Stage();
             GridPane pain = new GridPane();
             pain.setHgap(10);
@@ -215,7 +169,8 @@ public class HelloApplication extends Application {
             pain.setAlignment(Pos.CENTER);
 
         });
-        menuItem_Help.setOnAction(e-> {
+        menuItem_Help.setOnAction(e -> {
+
             Label About = new Label("have you tried not getting help?");
             Stage helpStage = new Stage();
             GridPane pain = new GridPane();
@@ -228,29 +183,336 @@ public class HelloApplication extends Application {
             pain.add(About, 0, 0);
             pain.setAlignment(Pos.CENTER);
         });
-        menuItem_ApClose.setOnAction(e -> Platform.exit());
+        menuItem_ApClose.setOnAction(e -> {
+            if (systemCheck == 1) {
+                Platform.exit();
+            } else {
+                Button yes = new Button("Yes");
+                Button no = new Button("No");
+                Label Warning = new Label("Are you sure you want to close without saving?");
+                Stage WarningStage = new Stage();
+                GridPane warn = new GridPane();
+                warn.setHgap(10);
+                warn.setVgap(10);
 
+                Scene scene = new Scene(warn, 500, 300);
+                WarningStage.setScene(scene);
+                WarningStage.show();
+
+                warn.add(Warning, 0, 0);
+                warn.add(yes, 0, 1);
+                warn.add(no, 2, 1);
+                warn.setAlignment(Pos.CENTER);
+
+                yes.setOnAction(new EventHandler<ActionEvent>() {
+                    @Override
+                    public void handle(ActionEvent actionEvent) {
+                        Platform.exit();
+                    }
+                });
+                no.setOnAction(new EventHandler<ActionEvent>() {
+                    @Override
+                    public void handle(ActionEvent actionEvent) {
+                        WarningStage.close();
+                    }
+                });
+
+
+            }
+        });
+
+        TabPane tabpane = new TabPane();
+        Tab newTab = new Tab();
+        EventHandler<Event> event = new EventHandler<Event>() {
+            @Override
+            public void handle(Event ev) {
+                if (newTab.isSelected()) {
+                    Tab tabs = new Tab("Tab" + (counter + 1));
+                    counter++;
+                    Canvas canvas = new Canvas(x, y);
+                    GraphicsContext graphC;
+                    graphC = canvas.getGraphicsContext2D();
+                    graphC.setLineWidth(1);
+                    ScrollPane panes = new ScrollPane();
+                    panes.setContent(canvas);
+                    tabs.setContent(panes);
+
+                    canvas.setOnMousePressed(e -> {
+                        if (Drawbtn.isSelected()) {
+                            graphC.setStroke(lineCP.getValue());
+                            graphC.beginPath();
+                            graphC.lineTo(e.getX(), e.getY());
+                            systemCheck -= 1;
+                            if (systemCheck < 0) {
+                                systemCheck = 0;
+                            }
+                        } else if (Eraserbtn.isSelected()) {
+                            double line_Width = graphC.getLineWidth();
+                            graphC.clearRect(e.getX() - line_Width / 2, e.getY() - line_Width / 2, line_Width, line_Width);
+                            systemCheck -= 1;
+                            if (systemCheck < 0) {
+                                systemCheck = 0;
+                            }
+                        } else if (linebtn.isSelected()) {
+                            graphC.setStroke(lineCP.getValue());
+                            line.setStartX(e.getX());
+                            line.setStartY(e.getY());
+                            systemCheck -= 1;
+                            if (systemCheck < 0) {
+                                systemCheck = 0;
+                            }
+                        } else if (EyeDropper.isSelected()) {
+
+                        } else if (rectBtn.isSelected()) {
+                            graphC.setStroke(lineCP.getValue());
+                            graphC.setFill(lineCP.getValue());
+                            rect.setX(e.getX());
+                            rect.setY(e.getY());
+                            systemCheck -= 1;
+                            if (systemCheck < 0) {
+                                systemCheck = 0;
+                            }
+                        } else if (circlebtn.isSelected()) {
+                            graphC.setStroke(lineCP.getValue());
+                            graphC.setFill(lineCP.getValue());
+                            circ.setCenterX(e.getX());
+                            circ.setCenterY(e.getY());
+                            systemCheck -= 1;
+                            if (systemCheck < 0) {
+                                systemCheck = 0;
+                            }
+                        } else if (ellipsebtn.isSelected()) {
+                            graphC.setStroke(lineCP.getValue());
+                            graphC.setFill(lineCP.getValue());
+                            elps.setCenterX(e.getX());
+                            elps.setCenterY(e.getY());
+                            systemCheck -= 1;
+                            if (systemCheck < 0) {
+                                systemCheck = 0;
+                            }
+                        } else if (squarebtn.isSelected()) {
+                            graphC.setStroke(lineCP.getValue());
+                            graphC.setFill(lineCP.getValue());
+                            rect.setX(e.getX());
+                            rect.setY(e.getY());
+                            systemCheck -= 1;
+                            if (systemCheck < 0) {
+                                systemCheck = 0;
+                            }
+                        }
+                    });
+                    canvas.setOnMouseDragged(e -> {
+                        if (Drawbtn.isSelected()) {
+                            graphC.lineTo(e.getX(), e.getY());
+                            graphC.stroke();
+                        } else if (Eraserbtn.isSelected()) {
+                            double line_Width = graphC.getLineWidth();
+                            graphC.clearRect(e.getX() - line_Width / 2, e.getY() - line_Width / 2, line_Width, line_Width);
+                            ;
+                        }
+
+                    });
+                    canvas.setOnMouseReleased(e -> {
+                        if (Drawbtn.isSelected()) {
+                            graphC.lineTo(e.getX(), e.getY());
+                            graphC.stroke();
+                            graphC.closePath();
+                        } else if (Eraserbtn.isSelected()) {
+                            double line_Width = graphC.getLineWidth();
+                            graphC.clearRect(e.getX() - line_Width / 2, e.getY() - line_Width / 2, line_Width, line_Width);
+                        } else if (linebtn.isSelected()) {
+                            line.setEndX(e.getX());
+                            line.setEndY(e.getY());
+                            if (lineDash == 1) {
+                                graphC.setLineDashes(25);
+                                graphC.strokeLine(line.getStartX(), line.getStartY(), line.getEndX(), line.getEndY());
+                            } else if (lineDash == 0) {
+                                graphC.setLineDashes(0);
+                                graphC.strokeLine(line.getStartX(), line.getStartY(), line.getEndX(), line.getEndY());
+                            }
+                        } else if (rectBtn.isSelected()) {
+                            rect.setWidth(Math.abs((e.getX() - rect.getX())));
+                            rect.setHeight(Math.abs((e.getY() - rect.getY())));
+                            //rect.setX((rect.getX() > e.getX()) ? e.getX(): rect.getX());
+                            if (rect.getX() > e.getX()) {
+                                rect.setX(e.getX());
+                            }
+                            //rect.setY((rect.getY() > e.getY()) ? e.getY(): rect.getY());
+                            if (rect.getY() > e.getY()) {
+                                rect.setY(e.getY());
+                            }
+
+                            graphC.fillRect(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
+                            graphC.strokeRect(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
+
+
+                        } else if (squarebtn.isSelected()) {
+                            rect.setWidth(Math.abs((e.getX() - rect.getX())));
+                            rect.setHeight(rect.getWidth());
+                            //rect.setX((rect.getX() > e.getX()) ? e.getX(): rect.getX());
+                            if (rect.getX() > e.getX()) {
+                                rect.setX(e.getX());
+                            }
+                            //rect.setY((rect.getY() > e.getY()) ? e.getY(): rect.getY());
+                            if (rect.getY() > e.getY()) {
+                                rect.setY(e.getY());
+                            }
+
+                            graphC.fillRect(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
+                            graphC.strokeRect(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
+
+                        } else if (circlebtn.isSelected()) {
+                            circ.setRadius((Math.abs(e.getX() - circ.getCenterX()) + Math.abs(e.getY() - circ.getCenterY())) / 2);
+
+                            if (circ.getCenterX() > e.getX()) {
+                                circ.setCenterX(e.getX());
+                            }
+                            if (circ.getCenterY() > e.getY()) {
+                                circ.setCenterY(e.getY());
+                            }
+
+                            graphC.fillOval(circ.getCenterX(), circ.getCenterY(), circ.getRadius(), circ.getRadius());
+                            graphC.strokeOval(circ.getCenterX(), circ.getCenterY(), circ.getRadius(), circ.getRadius());
+
+                        } else if (ellipsebtn.isSelected()) {
+                            elps.setRadiusX(Math.abs(e.getX() - elps.getCenterX()));
+                            elps.setRadiusY(Math.abs(e.getY() - elps.getCenterY()));
+
+                            if (elps.getCenterX() > e.getX()) {
+                                elps.setCenterX(e.getX());
+                            }
+                            if (elps.getCenterY() > e.getY()) {
+                                elps.setCenterY(e.getY());
+                            }
+
+                            graphC.strokeOval(elps.getCenterX(), elps.getCenterY(), elps.getRadiusX(), elps.getRadiusY());
+                            graphC.fillOval(elps.getCenterX(), elps.getCenterY(), elps.getRadiusX(), elps.getRadiusY());
+
+
+                        }
+                    });
+
+                    changeCan.setOnAction(new EventHandler<ActionEvent>() {
+                        @Override
+                        public void handle(ActionEvent actionEvent) {
+                            canvas.setWidth(Integer.parseInt(CanvasX.getText()));
+                            canvas.setHeight(Integer.parseInt(CanvasY.getText()));
+                        }
+                    });
+
+                    lineCP.setOnAction(e -> {
+                        graphC.setStroke(lineCP.getValue());
+                    });
+                    slider.valueProperty().addListener(e -> {
+                        double width = slider.getValue();
+                        lineWidth.setText(String.format("%.1f", width));
+                        graphC.setLineWidth(width);
+                    });
+
+                    menuItem_Open.setOnAction(e -> {
+                        FileChooser openFile = new FileChooser();
+                        openFile.setTitle("Open File");
+                        setExtFilters(openFile);
+                        File file = openFile.showOpenDialog(stage);
+
+                        if (file != null) {
+                            try {
+                                InputStream io = new FileInputStream(file);
+                                Image img = new Image(io);
+                                if (canvas.getHeight() < img.getHeight()) {
+                                    canvas.setHeight(img.getHeight());
+                                }
+                                if (canvas.getWidth() < img.getWidth()) {
+                                    canvas.setWidth(img.getWidth());
+                                }
+
+                                graphC.drawImage(img, canvas.getWidth() / 2 - img.getWidth() / 2,
+                                        canvas.getHeight() / 2 - img.getHeight() / 2);
+
+                            } catch (IOException ex) {
+                                System.out.println("Error");
+                            }
+                        }
+                    });
+                    menuItem_SaveAS.setOnAction(e -> {
+                        FileChooser savefile = new FileChooser();
+                        savefile.setTitle("Save File");
+                        systemCheck++;
+                        if (systemCheck > 1) {
+                            systemCheck = 1;
+                        }
+
+                        File file = savefile.showSaveDialog(stage);
+                        if (file != null) {
+                            try {
+                                WritableImage writableImage = new WritableImage(x, y);
+                                canvas.snapshot(null, writableImage);
+                                RenderedImage renderedImage = SwingFXUtils.fromFXImage(writableImage, null);
+                                ImageIO.write(renderedImage, "png", file);
+                            } catch (IOException ex) {
+                                System.out.println("Error!");
+                            }
+                        }
+
+                    });
+
+                    tabpane.getTabs().add(tabpane.getTabs().size() - 1, tabs);
+                    tabpane.getSelectionModel().select(tabpane.getTabs().size() - 2);
+
+                    final KeyCombination csave = new KeyCharacterCombination(String.valueOf(KeyCode.S), KeyCombination.CONTROL_DOWN);
+                    Runnable rn = () -> {
+                        FileChooser savefile = new FileChooser();
+                        savefile.setTitle("Save File");
+                        systemCheck++;
+                        if (systemCheck > 1) {
+                            systemCheck = 1;
+                        }
+
+                        File file = savefile.showSaveDialog(stage);
+                        if (file != null) {
+                            try {
+                                WritableImage writableImage = new WritableImage(x, y);
+                                canvas.snapshot(null, writableImage);
+                                RenderedImage renderedImage = SwingFXUtils.fromFXImage(writableImage, null);
+                                ImageIO.write(renderedImage, "png", file);
+                            } catch (IOException ex) {
+                                System.out.println("Error!");
+                            }
+                        }
+                    };
+                    menuItem_SaveAS.setAccelerator(KeyCombination.keyCombination("shortcut + S"));
+
+                    //Keyboard ShortCuts
+
+                }
+            }
+        };
+        newTab.setOnSelectionChanged(event);
         /*       Setting Up Panes      */
 
-        ScrollPane panes = new ScrollPane();
-        panes.setContent(canvas);
+
+        tabpane.getTabs().add(newTab);
 
         BorderPane pane = new BorderPane();
         pane.setLeft(vboxBtns);
-        pane.setCenter(panes);
+        pane.setCenter(tabpane);
         pane.setTop(Menubar);
 
-
         Scene scene = new Scene(pane, 1200, 800);
-
         stage.setScene(scene);
         stage.show();
 
+    }
 
+    private void setExtFilters(FileChooser chooser) {
+        chooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("JPG", "*.jpg"),
+                new FileChooser.ExtensionFilter("PNG", "*.png")
+        );
     }
 
 
     public static void main(String[] args) {
         launch();
     }
- }
+}
